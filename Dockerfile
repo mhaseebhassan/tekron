@@ -9,7 +9,7 @@ COPY . .
 
 RUN npx prisma generate
 
-ENV DATABASE_URL="dummy"
+ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
 RUN npm run build
 
 EXPOSE 3000
