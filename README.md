@@ -2,7 +2,7 @@
 
 A full-stack premium tech e-commerce store built with **Next.js 14**.
 
-![alt text](image.png)![alt text](image-1.png)
+![alt text](image.png)!
 
 ## Tech Stack
 
