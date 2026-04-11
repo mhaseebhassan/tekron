@@ -10,8 +10,7 @@ COPY . .
 RUN npx prisma generate
 
 ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
-RUN npm run build
-
+RUN NEXT_PUBLIC_SKIP_DB=true npm run build
 EXPOSE 3000
 
 CMD ["npm", "start"]
