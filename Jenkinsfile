@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Clone Repo') {
             steps {
-                git 'https://github.com/mhaseebhassan/tekron.git'
+                git branch: 'main', url: 'https://github.com/mhaseebhassan/tekron.git'
             }
         }
 
@@ -20,11 +20,10 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy (Part II)') {
             steps {
-                sh 'docker stop tekron || true'
-                sh 'docker rm tekron || true'
-                sh 'docker run -d -p 80:3000 --name tekron haseebbhinder/tekron'
+                sh 'docker rm -f tekron || true'
+                sh 'docker run -d -p 3001:3000 --name tekron haseebbhinder/tekron'
             }
         }
     }
