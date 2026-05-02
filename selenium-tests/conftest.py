@@ -18,6 +18,11 @@ def browser():
     chrome_options.add_argument("--ignore-certificate-errors")
     chrome_options.add_argument("--allow-insecure-localhost")
     chrome_options.add_argument("--disable-features=UpgradeInsecureRequests")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--disable-software-rasterizer")
+    chrome_options.add_argument("--proxy-server='direct://'")
+    chrome_options.add_argument("--proxy-bypass-list=*")
+    chrome_options.set_capability("acceptInsecureCerts", True)
     
     # Check if running in Docker
     if os.path.exists('/.dockerenv'):
