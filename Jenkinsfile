@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_HUB_REPO = "haseebbhinder/tekron"
-        SMTP_RECIPIENT = "muhammadhaseebhassan23@gmail.com"
+        COMMITTER_EMAIL = sh(script: "git log -1 --pretty=format:'%ae'", returnStdout: true).trim()
     }
 
     stages {
@@ -56,13 +56,13 @@ pipeline {
     post {
         always {
             emailext (
-                subject: "Jenkins Build ${currentBuild.fullDisplayName}: ${currentBuild.currentResult}",
+                subject: "Assignment 3: Test Results for ${currentBuild.fullDisplayName}",
                 body: """
                     <h3>Build Status: ${currentBuild.currentResult}</h3>
                     <p>Build URL: <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>
-                    <p>Check the attached Selenium report for details.</p>
+                    <p>Hello, the automated tests for the Tekron application have completed. Check the attached report for details.</p>
                 """,
-                to: "${SMTP_RECIPIENT}",
+                to: "${COMMITTER_EMAIL}, qasimalik@gmail.com",
                 attachmentsPattern: 'selenium-report.html',
                 attachLog: true
             )
