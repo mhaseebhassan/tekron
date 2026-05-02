@@ -17,7 +17,7 @@ pipeline {
 
         stage('Build Application') {
             steps {
-                sh 'docker-compose build app'
+                sh 'docker compose build web'
             }
         }
 
@@ -51,7 +51,7 @@ pipeline {
                 branch 'main'
             }
             steps {
-                sh "docker tag haseebbhinder/tekron ${DOCKER_HUB_REPO}:latest"
+                sh "docker tag tekron-ci-cd_web ${DOCKER_HUB_REPO}:latest"
                 // sh "docker push ${DOCKER_HUB_REPO}:latest" // Uncomment if Docker Hub creds are set
                 sh 'docker rm -f tekron-prod || true'
                 sh "docker run -d -p 3001:3000 --name tekron-prod -e DATABASE_URL=${env.DATABASE_URL} -e NEXTAUTH_SECRET=${env.NEXTAUTH_SECRET} -e NEXTAUTH_URL=http://localhost:3001 ${DOCKER_HUB_REPO}:latest"
