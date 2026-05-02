@@ -23,11 +23,17 @@ pipeline {
 
         stage('Build & Run Tests') {
             environment {
-                NODE_ENV = "development"
+                NODE_ENV = "production"
             }
             steps {
                 script {
-                    // Start everything. The 'tests' service will wait for 'app' to be healthy.
+                    // 1. Start Database and Web in background
+                    sh 'docker compose up -d db web'
+                    
+                    // 2. Wait for Web to be healthy and Push DB Schema
+                    sh 'docker compose exec -T web npx prisma db push --accept-data-loss'
+                    
+                    // 3. Run Tests
                     sh 'docker compose up --build --force-recreate --exit-code-from tests tests'
                 }
             }
