@@ -15,6 +15,9 @@ def browser():
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--ignore-certificate-errors")
+    chrome_options.add_argument("--allow-insecure-localhost")
+    chrome_options.add_argument("--disable-features=UpgradeInsecureRequests")
     
     # Check if running in Docker
     if os.path.exists('/.dockerenv'):

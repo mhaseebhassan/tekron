@@ -28,7 +28,7 @@ pipeline {
             steps {
                 script {
                     // Start everything. The 'tests' service will wait for 'app' to be healthy.
-                    sh 'docker compose up --build --exit-code-from tests tests'
+                    sh 'docker compose up --build --force-recreate --exit-code-from tests tests'
                 }
             }
             post {
