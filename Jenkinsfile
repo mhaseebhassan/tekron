@@ -33,9 +33,14 @@ pipeline {
             }
             post {
                 always {
-                    // Copy report from container
-                    sh 'docker cp $(docker compose ps -q tests):/app/report.html selenium-report.html'
-                    sh 'docker cp $(docker compose ps -q tests):/app/screenshots screenshots || true'
+                    script {
+                        // More robust way to find the container ID even if it exited
+                        def containerId = sh(script: "docker ps -a -q --filter 'label=com.docker.compose.service=tests' | head -n 1", returnStdout: true).trim()
+                        if (containerId) {
+                            sh "docker cp ${containerId}:/app/report.html selenium-report.html || true"
+                            sh "docker cp ${containerId}:/app/screenshots screenshots || true"
+                        }
+                    }
                     archiveArtifacts artifacts: 'selenium-report.html, screenshots/*.png', allowEmptyArchive: true
                 }
             }
