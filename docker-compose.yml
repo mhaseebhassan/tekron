@@ -1,21 +1,38 @@
-version: '3'
+version: '3.8'
 
 services:
-  web:
-    image: haseebbhinder/tekron
-    ports:
-      - "3000:3000"
-    depends_on:
-      - db
-
   db:
-    image: postgres:13
+    image: postgres:15-alpine
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: pass
       POSTGRES_DB: tekron
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d tekron"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/tekron
+      - NEXTAUTH_SECRET=your_secret_here
+      - NEXTAUTH_URL=http://localhost:3000
+    depends_on:
+      db:
+        condition: service_healthy
+
+  tests:
+    build: ./selenium-tests
+    environment:
+      - BASE_URL=http://app:3000
+    depends_on:
+      - app
 
 volumes:
   db_data:

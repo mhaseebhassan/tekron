@@ -1,30 +1,71 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_HUB_REPO = "haseebbhinder/tekron"
+        SMTP_RECIPIENT = "muhammadhaseebhassan23@gmail.com"
+    }
+
     stages {
-        stage('Clone Repo') {
+        stage('Clone Repository') {
             steps {
                 git branch: 'main', url: 'https://github.com/mhaseebhassan/tekron.git'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build Application') {
             steps {
-                sh 'docker build -t haseebbhinder/tekron .'
+                sh 'docker-compose build app'
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Run Tests') {
             steps {
-                sh 'docker push haseebbhinder/tekron'
+                script {
+                    try {
+                        sh 'docker-compose up -d db app'
+                        sh 'sleep 10' // Give app time to start
+                        sh 'docker-compose up --abort-on-container-exit tests'
+                    } finally {
+                        // Extract report from container before stopping
+                        sh 'docker cp $(docker-compose ps -q tests):/app/report.html ./selenium-report.html'
+                        sh 'docker-compose down'
+                    }
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'selenium-report.html', fingerprint: true
+                }
             }
         }
 
-        stage('Deploy (Part II)') {
-            steps {
-                sh 'docker rm -f tekron || true'
-                sh 'docker run -d -p 3001:3000 --name tekron haseebbhinder/tekron'
+        stage('Deploy to Production') {
+            when {
+                branch 'main'
             }
+            steps {
+                sh "docker tag haseebbhinder/tekron ${DOCKER_HUB_REPO}:latest"
+                // sh "docker push ${DOCKER_HUB_REPO}:latest" // Uncomment if Docker Hub creds are set
+                sh 'docker rm -f tekron-prod || true'
+                sh "docker run -d -p 3001:3000 --name tekron-prod ${DOCKER_HUB_REPO}:latest"
+            }
+        }
+    }
+
+    post {
+        always {
+            emailext (
+                subject: "Jenkins Build ${currentBuild.fullDisplayName}: ${currentBuild.currentResult}",
+                body: """
+                    <h3>Build Status: ${currentBuild.currentResult}</h3>
+                    <p>Build URL: <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>
+                    <p>Check the attached Selenium report for details.</p>
+                """,
+                to: "${SMTP_RECIPIENT}",
+                attachmentsPattern: 'selenium-report.html',
+                attachLog: true
+            )
         }
     }
 }
