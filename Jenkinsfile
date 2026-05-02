@@ -4,6 +4,8 @@ pipeline {
     environment {
         DOCKER_HUB_REPO = "haseebbhinder/tekron"
         COMMITTER_EMAIL = sh(script: "git log -1 --pretty=format:'%ae'", returnStdout: true).trim()
+        DATABASE_URL = "postgresql://tekron_user:tekron_password@db:5432/tekron_db"
+        NEXTAUTH_SECRET = credentials('NEXTAUTH_SECRET')
     }
 
     stages {
@@ -19,23 +21,22 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
+        stage('Build & Run Tests') {
+            environment {
+                NODE_ENV = "development"
+            }
             steps {
                 script {
-                    try {
-                        sh 'docker-compose up -d db app'
-                        sh 'sleep 10' // Give app time to start
-                        sh 'docker-compose up --abort-on-container-exit tests'
-                    } finally {
-                        // Extract report from container before stopping
-                        sh 'docker cp $(docker-compose ps -q tests):/app/report.html ./selenium-report.html'
-                        sh 'docker-compose down'
-                    }
+                    // Start everything. The 'tests' service will wait for 'app' to be healthy.
+                    sh 'docker compose up --build --exit-code-from tests tests'
                 }
             }
             post {
                 always {
-                    archiveArtifacts artifacts: 'selenium-report.html', fingerprint: true
+                    // Copy report from container
+                    sh 'docker cp $(docker compose ps -q tests):/app/report.html selenium-report.html'
+                    sh 'docker cp $(docker compose ps -q tests):/app/screenshots screenshots || true'
+                    archiveArtifacts artifacts: 'selenium-report.html, screenshots/*.png', allowEmptyArchive: true
                 }
             }
         }
@@ -48,7 +49,7 @@ pipeline {
                 sh "docker tag haseebbhinder/tekron ${DOCKER_HUB_REPO}:latest"
                 // sh "docker push ${DOCKER_HUB_REPO}:latest" // Uncomment if Docker Hub creds are set
                 sh 'docker rm -f tekron-prod || true'
-                sh "docker run -d -p 3001:3000 --name tekron-prod ${DOCKER_HUB_REPO}:latest"
+                sh "docker run -d -p 3001:3000 --name tekron-prod -e DATABASE_URL=${env.DATABASE_URL} -e NEXTAUTH_SECRET=${env.NEXTAUTH_SECRET} -e NEXTAUTH_URL=http://localhost:3001 ${DOCKER_HUB_REPO}:latest"
             }
         }
     }
